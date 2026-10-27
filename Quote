@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>QuoteEasy MY</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--tx:#1b2430;--mu:#5d6b7c;--bd:#d8dee6;--ac:#0b6e4f;--acx:#fff;--in:#fff}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#10151c;--card:#19212b;--tx:#e8edf3;--mu:#9aa8b8;--bd:#2c3846;--ac:#3ecf9a;--acx:#06251a;--in:#111820}}
+:root[data-theme=dark]{--bg:#10151c;--card:#19212b;--tx:#e8edf3;--mu:#9aa8b8;--bd:#2c3846;--ac:#3ecf9a;--acx:#06251a;--in:#111820}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:5}
+header h1{font-size:20px;margin:0 auto 0 0}main{max-width:1200px;margin:0 auto;padding:16px}
+button,select,input,textarea{font:inherit;color:var(--tx)}
+button{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--bd);background:var(--card);cursor:pointer}
+button.p{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:600}button.d{color:#c0392b}
+input,select,textarea{width:100%;min-height:44px;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--in)}
+label{display:block;font-weight:600;margin:10px 0 4px}small,.mu{color:var(--mu)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.edit{display:grid;grid-template-columns:1fr;gap:16px}.tabs{display:flex;gap:8px;margin-bottom:12px}
+@media(min-width:900px){.edit{grid-template-columns:minmax(0,1fr) 440px}.tabs{display:none}.edit .pv{display:block!important}.edit .fm{display:block!important}}
+.hide{display:none}.badge{padding:2px 10px;border-radius:99px;font-size:14px;font-weight:600;border:1px solid var(--bd)}
+.s-Draft{background:#e5e9ef;color:#333}.s-Sent{background:#dbeafe;color:#1d4ed8}.s-Accepted{background:#d1fae5;color:#065f46}.s-Converted{background:#ede9fe;color:#5b21b6}
+.doc{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}.sum b{font-size:22px;display:block}
+.item{border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:10px}
+.sheet{background:#fff;color:#111;width:100%;padding:28px;font-size:13px;line-height:1.45;border-radius:6px;border:1px solid var(--bd)}
+.sheet table{width:100%;border-collapse:collapse}.sheet th{background:#0b6e4f;color:#fff;text-align:left;padding:6px}.sheet td{padding:6px;border-bottom:1px solid #ddd;vertical-align:top}
+.sheet tr{page-break-inside:avoid}.r{text-align:right!important}.tot td{border:0;padding:3px 6px}
+#toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:99px;display:none;z-index:9}
+img{max-width:100%}
+@media(max-width:899px){.pv{overflow-x:auto}.sheet{min-width:600px}.tabs{position:sticky;top:0;z-index:4;background:var(--bg);padding:8px 0;margin-bottom:4px}.tabs button{flex:1}}
+@media(max-width:560px){main{padding:12px}header{position:static;padding:10px 12px}header h1{flex:1 0 100%;font-size:18px}header button{flex:1;padding:0 8px;font-size:14px}.g2{grid-template-columns:1fr}.item .g2{grid-template-columns:1fr 1fr}.doc{flex-direction:column;align-items:stretch}.doc .row>*{flex:1 1 22%;padding:0 6px;font-size:14px}.doc .row select{flex:1 1 100%;font-size:16px}.card{padding:14px}h2{font-size:18px}.sum b{font-size:18px}}
+</style></head><body>
+<header><h1>QuoteEasy MY</h1><button onclick="go('list')">Documents</button><button onclick="go('prof')">My Business</button><button onclick="backup()">Backup</button><button onclick="$('#rf').click()">Restore</button><button id="th" aria-label="Switch light or dark mode" onclick="theme()">🌓</button><input type="file" id="rf" class="hide" accept=".json" onchange="restore(this)"></header>
+<main id="m"></main><div id="toast" role="status"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let S={profile:null,docs:[],n:{QT:0,PI:0}},cur=null,flt='',stf='All',tm;
+try{S=JSON.parse(localStorage.getItem('qe1'))||S}catch(e){}
+try{let t=localStorage.getItem('qe-th');if(t)document.documentElement.dataset.theme=t}catch(e){}
+function save(){try{localStorage.setItem('qe1',JSON.stringify(S));toast('Saved ✓')}catch(e){toast('Could not save. Your browser storage may be full or blocked.')}}
+function toast(t){const x=$('#toast');x.textContent=t;x.style.display='block';clearTimeout(tm);tm=setTimeout(()=>x.style.display='none',2200)}
+function theme(){const d=document.documentElement,dark=d.dataset.theme?d.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;d.dataset.theme=dark?'light':'dark';try{localStorage.setItem('qe-th',d.dataset.theme)}catch(e){}}
+const RM=s=>'RM '+(s/100).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+const sen=n=>Math.round((+n||0)*100);
+function calc(d){let sub=0,dis=0;d.items.forEach(i=>{const l=Math.round((+i.q||0)*sen(i.p));i.l=l;sub+=l;if(d.dm=='item')dis+=Math.round(l*(+i.disc||0)/100)});
+if(d.dm=='order')dis=Math.round(sub*(+d.dp||0)/100);if(d.dm=='none')dis=0;
+const tx=sub-dis,sst=d.sst?Math.round(tx*(+d.rate||0)/100):0,sm=tx+sst,rd=d.round?Math.round(sm/5)*5-sm:0;return{sub,dis,tx,sst,rd,tot:sm+rd}}
+function newDoc(type,base){const p=S.profile||{};S.n[type]++;const t=new Date(),due=new Date(t.getTime()+(+p.valid||30)*864e5),f=x=>x.toISOString().slice(0,10);
+const d=Object.assign({id:Date.now()+''+Math.random().toString(36).slice(2,5),type,no:type+'-'+(p.yr?t.getFullYear()+'-':'')+String(S.n[type]).padStart(4,'0'),issue:f(t),due:f(due),
+client:{name:'',company:'',address:'',phone:'',email:''},items:[{n:'',d:'',q:1,p:0,disc:0}],dm:'none',dp:0,sst:!!p.sst,rate:p.rate||8,round:false,notes:p.notes||'',terms:p.terms||'',status:'Draft',from:''},base||{});d.type=type;d.no=type+'-'+(p.yr?t.getFullYear()+'-':'')+String(S.n[type]).padStart(4,'0');d.id=Date.now()+''+Math.random().toString(36).slice(2,5);return d}
+function go(v){if(v=='list')list();else if(v=='prof')prof()}
+function list(){cur=null;const m=$('#m');if(!S.profile){return prof(true)}
+const q=flt.toLowerCase(),ds=S.docs.filter(d=>(stf=='All'||d.status==stf)&&(!q||(d.no+d.client.name+d.client.company).toLowerCase().includes(q))).reverse();
+const mo=new Date().toISOString().slice(0,7),acc=S.docs.filter(d=>d.status=='Accepted'&&d.issue.startsWith(mo)).reduce((a,d)=>a+calc(d).tot,0);
+m.innerHTML=`<div class="sum"><div class="card"><small>Drafts</small><b>${S.docs.filter(d=>d.status=='Draft').length}</b></div><div class="card"><small>Accepted this month</small><b>${RM(acc)}</b></div></div>
+<div class="row" style="margin-bottom:12px"><button class="p" onclick="open_(newDoc('QT'))">+ New Quotation</button><button onclick="open_(newDoc('PI'))">+ New Proforma Invoice</button></div>
+<div class="row" style="margin-bottom:12px"><input id="sq" style="flex:1;min-width:200px" placeholder="Search client name or number" aria-label="Search" value="${E(flt)}" oninput="flt=this.value;lr()"><select id="sf" style="width:auto" aria-label="Filter by status" onchange="stf=this.value;lr()">${['All','Draft','Sent','Accepted','Converted'].map(s=>`<option ${s==stf?'selected':''}>${s}</option>`).join('')}</select></div><div id="ls"></div>`;lr()}
+function lr(){const q=flt.toLowerCase(),ds=S.docs.filter(d=>(stf=='All'||d.status==stf)&&(!q||(d.no+d.client.name+d.client.company).toLowerCase().includes(q))).reverse();
+$('#ls').innerHTML=ds.length?ds.map(d=>`<div class="card doc"><div><b>${d.no}</b> <span class="badge s-${d.status}">${d.status}</span><br>${E(d.client.name||'No client yet')} · <span class="mu">${d.issue}</span> · <b>${RM(calc(d).tot)}</b></div>
+<div class="row"><select style="width:auto" aria-label="Status" onchange="st('${d.id}',this.value)">${['Draft','Sent','Accepted','Converted'].map(s=>`<option ${s==d.status?'selected':''}>${s}</option>`).join('')}</select>
+<button onclick="open_(gd('${d.id}'))">Open</button><button onclick="dup('${d.id}')">Duplicate</button><button onclick="pdf(gd('${d.id}'))">PDF</button><button class="d" onclick="del('${d.id}')">Delete</button></div></div>`).join(''):
+`<div class="card" style="text-align:center"><p>${S.docs.length?'No documents match your search.':'No documents yet. Create your first one above, or try an example.'}</p>${S.docs.length?'':'<button onclick="ex()">Load example quotation</button>'}</div>`}
+const gd=id=>S.docs.find(d=>d.id==id);
+function st(id,v){gd(id).status=v;save();lr()}
+function dup(id){const o=JSON.parse(JSON.stringify(gd(id)));const d=newDoc(o.type,Object.assign(o,{id:undefined,no:undefined,status:'Draft',from:''}));d.id=Date.now()+'';S.docs.push(d);save();list();toast('Duplicated as '+d.no)}
+function del(id){ask('Delete this document? This cannot be undone.',()=>{S.docs=S.docs.filter(d=>d.id!=id);save();list()})}
+function ex(){const d=newDoc('QT',{client:{name:'Ahmad Rahman',company:'Rahman Trading Sdn Bhd',address:'12 Jalan Contoh, 50000 Kuala Lumpur',phone:'012-345 6789',email:'ahmad@example.com'},items:[{n:'Website design',d:'5 pages, mobile friendly',q:2,p:500,disc:0}],dm:'order',dp:10,sst:true,rate:8});S.docs.push(d);save();open_(d)}
+function prof(first){cur=null;const p=S.profile||{valid:30,rate:8,terms:'Payment within 14 days. Bank transfer to the account below.',notes:'Thank you for your business.'};
+const f=(l,k,t='text',h='')=>`<label for="p_${k}">${l}</label><input id="p_${k}" type="${t}" value="${E(p[k])}" ${h}>`;
+$('#m').innerHTML=`<div class="card"><h2>${first?'Welcome! Set up your business once':'My Business'}</h2><p class="mu">We will fill this in on every document for you.</p>
+<div class="g2"><div>${f('Business name','name')}${f('SSM registration number','ssm')}${f('SST registration number (if you have one)','sstno')}${f('Phone','phone')}${f('Email','email','email')}</div>
+<div>${f('Bank name','bank')}${f('Account name','accn')}${f('Account number','acc')}${f('Days a quotation stays valid','valid','number')}${f('Default SST rate (%)','rate','number')}</div></div>
+<label for="p_address">Address</label><textarea id="p_address" rows="3">${E(p.address)}</textarea><label for="p_terms">Payment terms</label><textarea id="p_terms" rows="2">${E(p.terms)}</textarea><label for="p_notes">Notes shown on documents</label><textarea id="p_notes" rows="2">${E(p.notes)}</textarea>
+<label>Logo (optional)</label><input type="file" accept="image/*" onchange="logo(this)"> ${p.logo?`<img src="${p.logo}" height="50" alt="Logo">`:''}
+<label><input type="checkbox" id="p_sst" style="width:auto;min-height:0" ${p.sst?'checked':''}> Add SST to new documents by default</label>
+<label><input type="checkbox" id="p_yr" style="width:auto;min-height:0" ${p.yr?'checked':''}> Include the year in document numbers (QT-2026-0001)</label>
+<br><button class="p" onclick="sp()">Save and continue</button></div>`;window.tl=p.logo}
+function logo(i){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,300/im.width),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);window.tl=c.toDataURL('image/png');toast('Logo ready. Press Save.')};im.src=r.result};if(i.files[0])r.readAsDataURL(i.files[0])}
+function sp(){const p={};['name','ssm','sstno','phone','email','bank','accn','acc','valid','rate','address','terms','notes'].forEach(k=>p[k]=$('#p_'+k).value);p.sst=$('#p_sst').checked;p.yr=$('#p_yr').checked;p.logo=window.tl||'';
+if(!p.name.trim())return toast('Please add your business name');S.profile=p;save();list()}
+function open_(d){cur=d;if(!S.docs.includes(d)){S.docs.push(d);save()}
+const f=(l,k,t='text')=>{const v=k.split('.').reduce((a,x)=>a[x],d);return `<label for="f_${k}">${l}</label><input id="f_${k}" type="${t}" data-k="${k}" value="${E(v)}">`};
+$('#m').innerHTML=`<div class="row" style="margin-bottom:12px"><button onclick="list()">← Back</button><h2 style="margin:0 auto 0 0">${d.type=='QT'?'Quotation':'Proforma Invoice'} ${d.no}</h2>${d.type=='QT'?'<button onclick="conv()">Convert to Proforma Invoice</button>':''}</div>
+<div class="tabs"><button class="p" onclick="tab(0)">1. Fill in</button><button onclick="tab(1)">2. Preview</button></div>
+<div class="edit"><div class="fm">
+<div class="card"><h3>Step 1 · Dates and number</h3><div class="g2"><div>${f('Document number','no')}</div><div><label for="f_status">Status</label><select id="f_status" data-k="status">${['Draft','Sent','Accepted','Converted'].map(s=>`<option ${s==d.status?'selected':''}>${s}</option>`).join('')}</select></div><div>${f('Issue date','issue','date')}</div><div>${f('Valid until / payment due','due','date')}</div></div></div>
+<div class="card"><h3>Step 2 · Client</h3>${f('Client name','client.name')}${f('Company','client.company')}${f('Address','client.address')}<div class="g2"><div>${f('Phone','client.phone')}</div><div>${f('Email','client.email','email')}</div></div></div>
+<div class="card"><h3>Step 3 · Items</h3><div id="its"></div><button onclick="ai()">+ Add item</button>
+<label for="f_dm">Discount</label><select id="f_dm" data-k="dm" onchange="cur.dm=this.value;ri();pv()"><option value="none" ${d.dm=='none'?'selected':''}>No discount</option><option value="item" ${d.dm=='item'?'selected':''}>Discount per item (%)</option><option value="order" ${d.dm=='order'?'selected':''}>Discount on whole order (%)</option></select>
+<div id="dpw" class="${d.dm=='order'?'':'hide'}">${f('Whole order discount (%)','dp','number')}</div>
+<label><input type="checkbox" style="width:auto;min-height:0" data-k="sst" ${d.sst?'checked':''}> Add Tax (SST)</label>
+<label for="f_rate">SST rate</label><select id="f_rate" data-k="rate" data-n="1">${[[0,'0% (exempt)'],[5,'5% Sales Tax'],[6,'6% Service Tax'],[8,'8% Service Tax'],[10,'10% Sales Tax']].map(([v,l])=>`<option value="${v}" ${v==d.rate?'selected':''}>${l}</option>`).join('')}</select>
+<label><input type="checkbox" style="width:auto;min-height:0" data-k="round" ${d.round?'checked':''}> Round total to nearest 5 sen</label></div>
+<div class="card"><h3>Step 4 · Notes and download</h3><label for="f_terms">Payment terms</label><textarea id="f_terms" data-k="terms" rows="2">${E(d.terms)}</textarea><label for="f_notes">Notes</label><textarea id="f_notes" data-k="notes" rows="2">${E(d.notes)}</textarea>
+<p id="warn" class="mu"></p><div class="row"><button class="p" onclick="pdf(cur)">Save as PDF</button><button onclick="xl(cur)">Save as Excel</button></div></div></div>
+<div class="pv hide"><div id="sheet" class="sheet"></div></div></div>`;ri();pv();
+$('#m').oninput=$('#m').onchange=e=>{const t=e.target;if(t.dataset.k){const ks=t.dataset.k.split('.'),l=ks.pop(),o=ks.reduce((a,x)=>a[x],cur);o[l]=t.type=='checkbox'?t.checked:(t.type=='number'||t.dataset.n)?+t.value:t.value;if(l=='dm')$('#dpw').className=t.value=='order'?'':'hide'}
+else if(t.dataset.i!=null){cur.items[t.dataset.i][t.dataset.f]=t.type=='number'?+t.value:t.value}else return;save();pv()}}
+function tab(i){document.querySelector('.fm').classList.toggle('hide',!!i);document.querySelector('.pv').classList.toggle('hide',!i);document.querySelectorAll('.tabs button').forEach((b,j)=>b.classList.toggle('p',j==i));window.scrollTo(0,0)}
+function ri(){$('#its').innerHTML=cur.items.map((it,i)=>`<div class="item"><label>Item name</label><input data-i="${i}" data-f="n" value="${E(it.n)}"><label>Description (optional)</label><input data-i="${i}" data-f="d" value="${E(it.d)}">
+<div class="g2"><div><label>Quantity</label><input type="number" min="0" step="any" data-i="${i}" data-f="q" value="${it.q}"></div><div><label>Unit price (RM)</label><input type="number" min="0" step="0.01" data-i="${i}" data-f="p" value="${it.p}"></div></div>
+${cur.dm=='item'?`<label>Discount (%)</label><input type="number" min="0" max="100" data-i="${i}" data-f="disc" value="${it.disc||0}">`:''}
+<div class="row" style="margin-top:8px"><button aria-label="Move up" onclick="mv(${i},-1)">↑</button><button aria-label="Move down" onclick="mv(${i},1)">↓</button><button class="d" onclick="rm(${i})">Remove</button></div></div>`).join('')}
+function ai(){cur.items.push({n:'',d:'',q:1,p:0,disc:0});save();ri();pv()}
+function ask(msg,fn){const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px';o.innerHTML=`<div class="card" role="dialog" aria-modal="true" style="max-width:380px;margin:0"><p>${E(msg)}</p><div class="row"><button class="d" id="ay">Yes, continue</button><button id="an">Cancel</button></div></div>`;document.body.appendChild(o);$('#an').onclick=()=>o.remove();$('#ay').onclick=()=>{o.remove();fn()}}
+function rm(i){if(cur.items.length<2){cur.items[0]={n:'',d:'',q:1,p:0,disc:0};save();ri();pv();return toast('Item cleared. A document needs at least one item line.')}cur.items.splice(i,1);save();ri();pv()}
+function mv(i,k){const j=i+k;if(j<0||j>=cur.items.length)return;[cur.items[i],cur.items[j]]=[cur.items[j],cur.items[i]];save();ri();pv()}
+function conv(){const o=cur,d=newDoc('PI',Object.assign(JSON.parse(JSON.stringify(o)),{id:undefined,no:undefined,status:'Draft',from:o.no}));d.id=Date.now()+'';o.status='Converted';S.docs.push(d);save();open_(d);toast('Created '+d.no)}
+function sheet(d){const p=S.profile||{},c=calc(d),cl=d.client;
+return `<div style="display:flex;justify-content:space-between;gap:12px"><div>${p.logo?`<img src="${p.logo}" style="max-height:60px"><br>`:''}<b style="font-size:16px">${E(p.name)}</b><br>${p.ssm?'SSM: '+E(p.ssm)+'<br>':''}${d.sst&&p.sstno?'SST No: '+E(p.sstno)+'<br>':''}${E(p.address).replace(/\n/g,'<br>')}<br>${E(p.phone)} ${E(p.email)}</div>
+<div class="r"><b style="font-size:20px;color:#0b6e4f">${d.type=='QT'?'QUOTATION':'PROFORMA INVOICE'}</b><br><b>${E(d.no)}</b><br>Date: ${d.issue}<br>${d.type=='QT'?'Valid until':'Due'}: ${d.due}${d.from?`<br><i>Converted from ${E(d.from)}</i>`:''}</div></div>
+<p><b>Bill to</b><br>${E(cl.name)||'<i>Client name</i>'}<br>${E(cl.company)}<br>${E(cl.address)}<br>${E(cl.phone)} ${E(cl.email)}</p>
+<table><tr><th>#</th><th>Item</th><th class="r">Qty</th><th class="r">Unit (RM)</th>${d.dm=='item'?'<th class="r">Disc</th>':''}<th class="r">Amount</th></tr>${d.items.map((i,n)=>`<tr><td>${n+1}</td><td><b>${E(i.n)}</b><br>${E(i.d)}</td><td class="r">${i.q}</td><td class="r">${RM(sen(i.p))}</td>${d.dm=='item'?`<td class="r">${i.disc||0}%</td>`:''}<td class="r">${RM(i.l)}</td></tr>`).join('')}</table>
+<table class="tot" style="width:55%;margin:10px 0 0 auto"><tr><td>Subtotal</td><td class="r">${RM(c.sub)}</td></tr>${c.dis?`<tr><td>Discount</td><td class="r">- ${RM(c.dis)}</td></tr>`:''}${d.sst?`<tr><td>SST (${d.rate}%)</td><td class="r">${RM(c.sst)}</td></tr>`:''}${d.round?`<tr><td>Rounding</td><td class="r">${RM(c.rd)}</td></tr>`:''}<tr><td><b>Grand Total</b></td><td class="r"><b style="font-size:15px">${RM(c.tot)}</b></td></tr></table>
+<div style="page-break-inside:avoid"><p><b>Payment terms</b><br>${E(d.terms).replace(/\n/g,'<br>')}</p><p><b>Bank transfer</b><br>${E(p.bank)} · ${E(p.accn)} · ${E(p.acc)}</p><p>${E(d.notes).replace(/\n/g,'<br>')}</p>${d.type=='PI'?'<p><i>This is a proforma invoice and not a tax invoice.</i></p>':''}
+<div style="display:flex;gap:40px;margin-top:50px"><div style="flex:1;border-top:1px solid #111;padding-top:4px">Authorised by</div><div style="flex:1;border-top:1px solid #111;padding-top:4px">Accepted by</div></div></div>`}
+function pv(){const el=$('#sheet');if(!el)return;el.innerHTML=sheet(cur);const w=[];if(!cur.client.name.trim())w.push("the client’s name");if(!cur.items.some(i=>i.n.trim()))w.push('at least one item name');if(!(S.profile||{}).name)w.push('your business details');$('#warn').textContent=w.length?'Before sending, please add: '+w.join(', ')+'.':'Everything looks good ✓'}
+const fn=(d,x)=>`${d.no}_${(d.client.name||'Client').replace(/[^\w]+/g,'')}.${x}`;
+async function put(name,data){if(typeof claude==='undefined'){const b=data instanceof Blob?data:new Blob([data]),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);return toast('Downloaded ✓')}const dl=await claude.use('downloads').catch(()=>null);if(!dl)return toast('Downloads are not available in this view.');try{await dl.save({filename:name,data});toast('Downloaded ✓')}catch(e){if(e.code!='declined')toast('Could not save the file.')}}
+async function pdfOld(d){const w=document.createElement('div');window.scrollTo(0,0);w.style.cssText='position:absolute;left:0;top:0;width:794px;background:#fff;color:#111';w.innerHTML=`<div class="sheet" style="border:0;padding:40px;font-size:13px">${sheet(d)}</div>`;document.body.appendChild(w);toast('Preparing PDF…');
+try{await new Promise(r=>setTimeout(r,150));const b=await html2pdf().set({margin:0,html2canvas:{scale:2,scrollX:0,scrollY:0,windowWidth:794,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4'},pagebreak:{mode:['css','legacy'],avoid:'tr'}}).from(w).outputPdf('blob');await put(fn(d,'pdf'),b)}catch(e){toast('PDF failed. Please try again.')}w.remove()}
+async function pdf(d){try{toast('Preparing PDF…');const{jsPDF}=window.jspdf,p=S.profile||{},c=calc(d),doc=new jsPDF({unit:'mm',format:'a4'}),W=210,M=15,R=W-M,cl=d.client;let y=18;const T=(t,x,yy,o)=>doc.text(String(t??''),x,yy,o),L=(t,w)=>doc.splitTextToSize(String(t||''),w);
+let lx=M;if(p.logo){try{const im=new Image();im.src=p.logo;await im.decode();const h=14,w=Math.min(50,h*im.width/im.height);doc.addImage(p.logo,'PNG',M,y-5,w,w*im.height/im.width>h?h:w*im.height/im.width);y+=16}catch(e){}}
+doc.setTextColor(20);doc.setFont('helvetica','bold');doc.setFontSize(13);T(p.name,M,y);let ly=y+5;doc.setFont('helvetica','normal');doc.setFontSize(9);
+[p.ssm?'SSM: '+p.ssm:'',d.sst&&p.sstno?'SST No: '+p.sstno:'',...L(p.address,95),[p.phone,p.email].filter(Boolean).join('  ')].filter(Boolean).forEach(t=>{T(t,M,ly);ly+=4.2});
+doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(11,110,79);T(d.type=='QT'?'QUOTATION':'PROFORMA INVOICE',R,y,{align:'right'});doc.setTextColor(20);doc.setFontSize(10);let ry=y+6;
+[d.no,'Date: '+d.issue,(d.type=='QT'?'Valid until: ':'Due: ')+d.due,d.from?'Converted from '+d.from:''].filter(Boolean).forEach((t,i)=>{doc.setFont('helvetica',i?'normal':'bold');T(t,R,ry,{align:'right'});ry+=5});
+y=Math.max(ly,ry)+4;doc.setFont('helvetica','bold');doc.setFontSize(10);T('Bill to',M,y);doc.setFont('helvetica','normal');doc.setFontSize(9);y+=5;
+[cl.name,cl.company,...L(cl.address,90),[cl.phone,cl.email].filter(Boolean).join('  ')].filter(Boolean).forEach(t=>{T(t,M,y);y+=4.2});y+=4;
+const it=d.dm=='item';doc.autoTable({startY:y,margin:{left:M,right:M},head:[['#','Item','Qty','Unit price',...(it?['Disc']:[]),'Amount']],body:d.items.map((i,n)=>[n+1,i.n+(i.d?'\n'+i.d:''),i.q,RM(sen(i.p)),...(it?[(i.disc||0)+'%']:[]),RM(i.l)]),headStyles:{fillColor:[11,110,79],textColor:255},styles:{fontSize:9,cellPadding:2,textColor:20},columnStyles:{0:{cellWidth:10},2:{halign:'right',cellWidth:16},3:{halign:'right',cellWidth:28},[it?4:99]:{halign:'right',cellWidth:16},[it?5:4]:{halign:'right',cellWidth:32}},headStyles:{fillColor:[11,110,79],textColor:255},didParseCell:h=>{if(h.section=='head'&&h.column.index>=2)h.cell.styles.halign='right'},rowPageBreak:'avoid'});
+y=doc.lastAutoTable.finalY+8;if(y>235){doc.addPage();y=20}
+const rows=[['Subtotal',RM(c.sub)],...(c.dis?[['Discount','- '+RM(c.dis)]]:[]),...(d.sst?[['SST ('+d.rate+'%)',RM(c.sst)]]:[]),...(d.round?[['Rounding',RM(c.rd)]]:[])];doc.setFontSize(10);rows.forEach(r=>{doc.setFont('helvetica','normal');T(r[0],125,y);T(r[1],R,y,{align:'right'});y+=5.5});
+doc.setFont('helvetica','bold');doc.setFontSize(12);doc.line(125,y-4,R,y-4);T('Grand Total',125,y+1);T(RM(c.tot),R,y+1,{align:'right'});y+=12;
+const blk=(h,t)=>{const ls=L(t,R-M);if(y+6+ls.length*4.2>280){doc.addPage();y=20}doc.setFont('helvetica','bold');doc.setFontSize(10);T(h,M,y);doc.setFont('helvetica','normal');doc.setFontSize(9);y+=5;ls.forEach(l=>{T(l,M,y);y+=4.2});y+=3};
+blk('Payment terms',d.terms);blk('Bank transfer',[p.bank,p.accn,p.acc].filter(Boolean).join(' - '));blk('Notes',d.notes);if(d.type=='PI')blk('','This is a proforma invoice and not a tax invoice.');
+if(y>245){doc.addPage();y=20}y+=22;doc.line(M,y,M+75,y);doc.line(R-75,y,R,y);doc.setFontSize(9);T('Authorised by',M,y+5);T('Accepted by',R-75,y+5);
+await put(fn(d,'pdf'),doc.output('blob'))}catch(e){console.error(e);toast('PDF failed. Please try again.')}}
+async function xl(d){try{const p=S.profile||{},c=calc(d),wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('Document',{pageSetup:{paperSize:9,fitToPage:true,fitToWidth:1,fitToHeight:0}});
+ws.columns=[{width:5},{width:30},{width:34},{width:9},{width:14},{width:9},{width:16}];const B=(r)=>r.font={bold:true},M='"RM "#,##0.00';
+ws.addRow([p.name]).font={bold:true,size:14};ws.addRow(['SSM: '+(p.ssm||'')+(d.sst&&p.sstno?'   SST No: '+p.sstno:'')]);ws.addRow([(p.address||'').replace(/\n/g,', ')]);ws.addRow([(p.phone||'')+' '+(p.email||'')]);
+ws.addRow([]);ws.addRow([d.type=='QT'?'QUOTATION':'PROFORMA INVOICE',,,,'No:',d.no]).font={bold:true,size:13};ws.addRow(['Bill to:',cl=d.client.name+(d.client.company?', '+d.client.company:''),,,'Date:',d.issue]);ws.addRow(['',d.client.address+' '+d.client.phone+' '+d.client.email,,,d.type=='QT'?'Valid until:':'Due:',d.due]);ws.addRow([]);
+const h=ws.addRow(['#','Item','Description','Qty','Unit Price','Disc %','Amount']);h.eachCell(x=>{x.font={bold:true,color:{argb:'FFFFFFFF'}};x.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0B6E4F'}}});ws.views=[{state:'frozen',ySplit:h.number}];
+const a=h.number+1;d.items.forEach((i,n)=>{const r=ws.addRow([n+1,i.n,i.d,+i.q,+i.p,d.dm=='item'?+i.disc||0:0,null]);r.getCell(7).value={formula:`D${r.number}*E${r.number}*(1-F${r.number}/100)`,result:(i.l-(d.dm=='item'?Math.round(i.l*(i.disc||0)/100):0))/100};r.getCell(5).numFmt=M;r.getCell(7).numFmt=M});
+const z=a+d.items.length-1,t=(l,f,v)=>{const r=ws.addRow([,,,,,l,null]);r.getCell(7).value={formula:f,result:v/100};r.getCell(7).numFmt=M;r.getCell(6).font={bold:true};return r.number};
+ws.addRow([]);const s=t('Subtotal',`SUMPRODUCT(D${a}:D${z},E${a}:E${z})`,c.sub),dr=t('Discount',d.dm=='order'?`G${s}*${+d.dp||0}/100`:`SUMPRODUCT(D${a}:D${z},E${a}:E${z},F${a}:F${z})/100`,c.dis),
+ss=t('SST ('+(d.sst?d.rate:0)+'%)',`(G${s}-G${dr})*${d.sst?d.rate:0}/100`,c.sst),rr=d.round?t('Rounding',`ROUND((G${s}-G${dr}+G${ss})/0.05,0)*0.05-(G${s}-G${dr}+G${ss})`,c.rd):0,
+g=t('GRAND TOTAL',`G${s}-G${dr}+G${ss}${rr?`+G${rr}`:''}`,c.tot);ws.getRow(g).font={bold:true};ws.addRow([]);ws.addRow(['Payment terms:',d.terms]);ws.addRow(['Bank:',`${p.bank||''} · ${p.accn||''} · ${p.acc||''}`]);ws.addRow(['Notes:',d.notes]);
+if(d.type=='PI')ws.addRow(['','This is a proforma invoice and not a tax invoice.']);ws.addRow([]);ws.addRow(['','Authorised by: ____________','','','Accepted by: ____________']);
+await put(fn(d,'xlsx'),new Blob([await wb.xlsx.writeBuffer()]))}catch(e){toast('Excel failed. Please try again.')}}
+async function backup(){await put('quoteeasy-backup.json',JSON.stringify(S))}
+function restore(i){const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o.docs)throw 0;ask('Replace everything in this app with the backup?',()=>{S=o;save();list()})}catch(e){toast('That does not look like a QuoteEasy backup.')}};if(i.files[0])r.readAsText(i.files[0]);i.value=''}
+S.profile?list():prof(true);
+try{if(Date.now()-(+localStorage.getItem('qe-bk')||0)>2592e6&&S.docs.length){localStorage.setItem('qe-bk',Date.now());setTimeout(()=>toast('Tip: press Backup to keep a safe copy of your documents.'),1500)}}catch(e){}
+</script></body></html>
